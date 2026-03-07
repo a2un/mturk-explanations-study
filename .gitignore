@@ -1,0 +1,5 @@
+.streamlit
+screener_attempts.json
+survey_data.csv
+tests
+__pycache__

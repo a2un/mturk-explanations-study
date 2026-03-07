@@ -1,0 +1,69 @@
+[
+  {
+    "mturk_worker_id": "test",
+    "completion_code": "ECD6-QGU0-BBF2",
+    "timestamp_utc": "2026-03-05T15:59:02.595985+00:00",
+    "task_mode": "pick",
+    "problem_index": 2,
+    "problem_statement": "Given a list of integers, return a new list where each element is replaced by the product of all other elements (without using division).",
+    "solution_source_code": "def product_except_self(nums):\n    n = len(nums)\n    result = [1] * n\n    left = 1\n    for i in range(n):\n        result[i] = left\n        left *= nums[i]\n    right = 1\n    for i in range(n - 1, -1, -1):\n        result[i] *= right\n        right *= nums[i]\n    return result",
+    "selected_line": "result[i] = left",
+    "correct_explanation": "At each index i, this line stores the product of all elements to the left of i. By the end of the first pass, result[i] holds the left product prefix. The second pass will then multiply in the right product, giving us the full product of all other elements without division.",
+    "demographics": {
+      "java_screener_score": 3,
+      "java_screener_passed": true,
+      "java_screener_attempts": 1,
+      "experience": "5-10 years",
+      "role": "Senior Developer"
+    },
+    "java_experience_level": "Passed screener (3/3)",
+    "responses": {
+      "selected_option_label": "Option A",
+      "selected_option_key": "distractor_1",
+      "is_correct": false,
+      "options_order": [
+        {
+          "position": "Option A",
+          "key": "distractor_1",
+          "text_preview": "This line sets result[i] to the running total of elements se…"
+        },
+        {
+          "position": "Option B",
+          "key": "correct",
+          "text_preview": "At each index i, this line stores the product of all element…"
+        },
+        {
+          "position": "Option C",
+          "key": "distractor_2",
+          "text_preview": "This line copies the value of left into the result array as …"
+        }
+      ]
+    }
+  },
+  {
+    "mturk_worker_id": "test12",
+    "completion_code": "XJU6-QGRV-HY2B",
+    "timestamp_utc": "2026-03-05T16:56:12.804412+00:00",
+    "task_mode": "rate",
+    "problem_index": 3,
+    "problem_statement": "Implement a function to find the longest common prefix among a list of strings.",
+    "solution_source_code": "def longest_common_prefix(strs):\n    if not strs:\n        return ''\n    prefix = strs[0]\n    for s in strs[1:]:\n        while not s.startswith(prefix):\n            prefix = prefix[:-1]\n            if not prefix:\n                return ''\n    return prefix",
+    "selected_line": "while not s.startswith(prefix):",
+    "correct_explanation": "This loop progressively trims the candidate prefix until the current string starts with it. By iteratively shortening the prefix one character at a time from the right, we find the longest string that is a valid prefix for every string seen so far.",
+    "demographics": {
+      "java_screener_score": 3,
+      "java_screener_passed": true,
+      "java_screener_attempts": 1,
+      "experience": "< 1 year",
+      "role": "Junior Developer"
+    },
+    "java_experience_level": "Passed screener (3/3)",
+    "responses": {
+      "correctness_rating": "Correct — it accurately describes what the line does",
+      "completeness_rating": "Incomplete — it is missing important aspects of the line",
+      "reasoning": "test"
+    }
+  }
+]{"mturk_worker_id": "test", "completion_code": "28KE-KNMM-0IJ7", "timestamp_utc": "2026-03-06T05:58:03.416531+00:00", "task_mode": "rate", "problem_index": 1, "problem_statement": "Write a function to check whether a given string is a palindrome (reads the same forwards and backwards).", "solution_source_code": "def is_palindrome(s):\n    s = s.lower().replace(' ', '')\n    left, right = 0, len(s) - 1\n    while left < right:\n        if s[left] != s[right]:\n            return False\n        left += 1\n        right -= 1\n    return True", "selected_line": "left, right = 0, len(s) - 1", "correct_explanation": "This line initializes two pointers at opposite ends of the string. The two-pointer technique allows us to compare characters from the outside in without reversing the string or using extra space, resulting in an O(n) time and O(1) space solution.", "demographics": {"java_screener_score": 3, "java_screener_passed": true, "java_screener_attempts": 1, "experience": "1-3 years", "role": "Prefer not to say"}, "java_experience_level": "Passed screener (3/3)", "responses": {"correctness_rating": "Correct — it accurately describes what the line does", "completeness_rating": "Complete — it covers all important aspects of the line", "reasoning": "test"}}
+{"mturk_worker_id": "test", "completion_code": "92L4-MGJX-CKCH", "timestamp_utc": "2026-03-06T06:01:49.851449+00:00", "task_mode": "rate", "problem_index": 0, "problem_statement": "Given an array of integers, find two numbers that add up to a target sum and return their indices.", "solution_source_code": "import java.util.HashMap;\n\npublic class TwoSum {\n    public int[] twoSum(int[] nums, int target) {\n        HashMap<Integer, Integer> seen = new HashMap<>();\n        for (int i = 0; i < nums.length; i++) {\n            int complement = target - nums[i];\n            if (seen.containsKey(complement)) {\n                return new int[]{seen.get(complement), i};\n            }\n            seen.put(nums[i], i);\n        }\n        return new int[]{};\n    }\n}", "selected_line": "int complement = target - nums[i];", "correct_explanation": "This line computes the value that, when added to nums[i], equals the target. By subtracting the current element from the target we get the complement — the exact number we need to have already stored in the HashMap. If it is present we can return immediately, giving an O(n) solution instead of the O(n²) nested-loop alternative.", "demographics": {"java_screener_score": 3, "java_screener_passed": true, "java_screener_attempts": 1, "experience": "< 1 year", "role": "Junior Developer"}, "java_experience_level": "Passed screener (3/3)", "responses": {"correctness_rating": "Correct — it accurately describes what the line does", "completeness_rating": "Complete — it covers all important aspects of the line", "reasoning": "test"}}
+{"mturk_worker_id": "test", "completion_code": "VI3K-RP7K-8W0Y", "timestamp_utc": "2026-03-06T06:15:34.470525+00:00", "task_mode": "rate", "problem_index": 1, "problem_statement": "Write a method to check whether a given string is a palindrome (reads the same forwards and backwards).", "solution_source_code": "public class PalindromeCheck {\n    public boolean isPalindrome(String s) {\n        s = s.toLowerCase().replaceAll(\"[^a-z0-9]\", \"\");\n        int left = 0, right = s.length() - 1;\n        while (left < right) {\n            if (s.charAt(left) != s.charAt(right)) {\n                return false;\n            }\n            left++;\n            right--;\n        }\n        return true;\n    }\n}", "selected_line": "int left = 0, right = s.length() - 1;", "correct_explanation": "This line initialises two pointers at opposite ends of the cleaned string. The two-pointer technique lets us compare characters inward from both ends simultaneously without allocating a reversed copy of the string, achieving O(n) time and O(1) extra space.", "demographics": {"java_screener_score": 3, "java_screener_passed": true, "java_screener_attempts": 1, "experience": "Prefer not to say", "role": "Prefer not to say"}, "java_experience_level": "Passed screener (3/3)", "responses": {"correctness_rating": "Correct — it accurately describes what the line does", "completeness_rating": "Complete — it covers all important aspects of the line", "reasoning": "test"}}
