@@ -2,5 +2,7 @@
 baseUrlPath = "/mturk-explanation-study"
 headless = true
 enableCORS = false
-enableXSRFProtection = false
 enableWebsocketCompression = false
+
+[browser]
+serverPort = 443
