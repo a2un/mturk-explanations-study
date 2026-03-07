@@ -4,6 +4,4 @@ headless = true
 enableXsrfProtection=false
 enableCORS = false
 enableWebsocketCompression = false
-
-[browser]
-serverPort = 443
+allowedOrigins = ["*"]
