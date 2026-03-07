@@ -8,13 +8,6 @@ RUN pip install --progress-bar off --no-cache-dir --upgrade -r /mturk-explanatio
 
 EXPOSE 14358
 
-ENV STREAMLIT_SERVER_HEADLESS=true
-ENV STREAMLIT_SERVER_ENABLE_CORS=false
-ENV STREAMLIT_SERVER_ENABLE_XSRF_PROTECTION=false
-ENV STREAMLIT_SERVER_BASE_URL_PATH=/mturk-explanation-study
-ENV STREAMLIT_BROWSER_SERVER_PORT=443
-ENV STREAMLIT_SERVER_ENABLE_WEBSOCKET_COMPRESSION=false
-
 HEALTHCHECK CMD curl --fail http://localhost:14358/mturk-explanation-study/_stcore/health
 
 ENTRYPOINT ["streamlit", "run", "/mturk-explanation-study/mturk_explanations_study_main.py", "--server.port=14358", "--server.address=0.0.0.0"]

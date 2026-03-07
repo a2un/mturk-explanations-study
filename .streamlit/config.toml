@@ -1,2 +1,6 @@
 [server]
 baseUrlPath = "/mturk-explanation-study"
+headless = true
+enableCORS = false
+enableXSRFProtection = false
+enableWebsocketCompression = false
