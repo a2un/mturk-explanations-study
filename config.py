@@ -1,10 +1,15 @@
+import os
+
 import streamlit as st
 
-DATA_FILE              = "survey_data.csv"
-RESPONSES_FILE         = "responses.json"
-ATTEMPTS_FILE          = "screener_attempts.json"
-QUESTIONS_FILE         = "screener_questions.json"
-COMPLETED_WORKERS_FILE = "completed_workers.json"
+DATA_DIR               = os.path.join(".", "data")
+os.makedirs(DATA_DIR, exist_ok=True)
+
+DATA_FILE              = os.path.join(DATA_DIR, "survey_data.csv")
+RESPONSES_FILE         = os.path.join(DATA_DIR, "responses.json")
+ATTEMPTS_FILE          = os.path.join(DATA_DIR, "screener_attempts.json")
+QUESTIONS_FILE         = os.path.join(DATA_DIR, "screener_questions.json")
+COMPLETED_WORKERS_FILE = os.path.join(DATA_DIR, "completed_workers.json")
 
 MAX_ATTEMPTS    = 2
 PASS_SCORE      = 3

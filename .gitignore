@@ -7,3 +7,4 @@ screener_questions.json
 responses.json
 data.csv
 *.bk
+completed_workers.json
