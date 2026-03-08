@@ -212,15 +212,31 @@ def page_consent():
         )
     st.session_state.demographics.update({"experience": exp, "role": role})
 
-    consent_check = st.checkbox("I have read the above and agree to participate.", key="consent_check")
-    worker_ok     = bool(st.session_state.worker_id)
+    st.markdown(
+        "Your responses will only be used for research purposes and the responses will be **ANONYMIZED**.\n\n"
+        "Please read the attached [consent form](https://pitt.co1.qualtrics.com/ControlPanel/File.php?F=F_wa8CERF58sCvIfJ) and provide your consent below:",
+        unsafe_allow_html=False,
+    )
+
+    consent_check = st.radio(
+        "Do you consent to participate?",
+        ["I consent", "I do not consent"],
+        key="consent_check",
+        index=None,
+    )
+    worker_ok = bool(st.session_state.worker_id)
+
+    consented = consent_check == "I consent"
+
+    if consent_check == "I do not consent":
+        st.warning("You must consent to participate. Please return this HIT on MTurk without submitting.")
 
     if not worker_ok:
         st.caption("Enter your Worker ID to continue.")
 
     col, _ = st.columns([1, 3])
     with col:
-        if st.button("I Agree & Begin", disabled=not (consent_check and worker_ok)):
+        if st.button("I Agree & Begin", disabled=not (consented and worker_ok)):
             st.session_state.page = PAGE_SURVEY
             st.rerun()
 
