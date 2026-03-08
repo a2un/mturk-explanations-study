@@ -1,0 +1,22 @@
+Construct a program that has a method that receives two arrays and 
+prints the values in the 2nd array that exist in the 1st array.
+---
+/*1*/public class JSearchArrayValues {
+/*2*/  //Step 1: Define the method
+/*3*/  public static void searchArrays(double[] arr1, double[] arr2) {
+/*4*/    //Step 1.1: Iterate through the values in the 2nd array
+/*5*/    for (double val2 : arr2) {
+/*6*/      //Step 1.1.1: Print the value in the 2nd array if it exists in the 1st array
+/*7*/      for (double val1 : arr1) {
+/*8*/        if (val1 == val2) {
+/*9*/          System.out.println(val2 + " exists in both array.");
+/*10*/        }
+/*11*/      }
+/*12*/    }
+/*13*/  }
+/*14*/  public static void main(String[] args) {
+/*15*/    double[] values1 = {2.0, 11, 4, 5, 3, 3.5, 4, 10, 16, 3};
+/*16*/    double[] values2 =  {7, 11, 3, 1.0};
+/*17*/    searchArrays(values1, values2);
+/*18*/  }
+/*19*/}

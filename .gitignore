@@ -3,3 +3,7 @@ screener_attempts.json
 survey_data.csv
 tests
 __pycache__
+screener_questions.json
+responses.json
+data.csv
+*.bk
