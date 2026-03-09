@@ -7,7 +7,7 @@ from config import MAX_ATTEMPTS, PAGE_CONSENT, PAGE_COMPLETE, PAGE_SURVEY, SPEED
 from utils import (
     get_attempt_count, get_qualified_worker, increment_attempt,
     mark_worker_qualified, pick_new_problem, record_completed_problem,
-    render_problem, reshuffle_screener_options,
+    record_completion_code, render_problem, reshuffle_screener_options,
     save_response, verify_worker_id,
 )
 
@@ -51,7 +51,6 @@ def page_screener():
     qualified = get_qualified_worker(wid)
     if qualified:
         prev_score = qualified["score"]
-        st.session_state.completion_code = qualified["completion_code"]
         st.success(
             f"✓ **Welcome back!** You already passed the eligibility check "
             f"({prev_score}/3). Skipping ahead…"
@@ -168,7 +167,7 @@ def page_screener():
     exhausted = used >= MAX_ATTEMPTS
 
     if score == PASS_SCORE:
-        mark_worker_qualified(wid, score, st.session_state.completion_code)
+        mark_worker_qualified(wid, score)
         st.success(f"✓ **Eligibility confirmed** — {score}/3 correct.")
         col, _ = st.columns([1, 3])
         with col:
@@ -246,7 +245,7 @@ def page_consent():
 
     st.markdown(
         "Your responses will only be used for research purposes and the responses will be **ANONYMIZED**.\n\n"
-        "Please read the attached [consent form](https://pitt.co1.qualtrics.com/ControlPanel/File.php?F=F_wa8CERF58sCvIfJ) and provide your consent below:",
+        "Please read the attached [consent form](https://example.com/consent-form) and provide your consent below:",
         unsafe_allow_html=False,
     )
 
@@ -396,6 +395,7 @@ def page_survey(df):
             st.session_state.response_payload = payload
             save_response(payload)
             record_completed_problem(st.session_state.worker_id, int(st.session_state.problem_idx))
+            record_completion_code(st.session_state.worker_id, st.session_state.completion_code)
             st.session_state.page = PAGE_COMPLETE
             st.rerun()
 
@@ -467,14 +467,17 @@ def page_complete(df):
             with col_yes:
                 if st.button("Yes, I submitted ✓"):
                     st.session_state.confirm_new_task = False
-                    # Clear task-specific state but keep worker identity & code
+                    # Clear task-specific state but keep worker identity
                     keys_to_keep = {
-                        "page", "worker_id", "completion_code", "java_level",
+                        "page", "worker_id", "java_level",
                         "demographics", "questions_standard", "questions_escalated",
                     }
                     for k in list(st.session_state.keys()):
                         if k not in keys_to_keep:
                             del st.session_state[k]
+                    # Generate a fresh completion code for the new task
+                    from utils import generate_completion_code
+                    st.session_state.completion_code = generate_completion_code()
                     # Set up the new task
                     import random
                     row = df.iloc[new_idx]

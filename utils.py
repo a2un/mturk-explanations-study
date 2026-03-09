@@ -99,16 +99,27 @@ def _save_qualified_workers(data):
         st.warning(f"Could not persist qualified-workers list: {exc}")
 
 
-def mark_worker_qualified(worker_id, score, completion_code):
+def mark_worker_qualified(worker_id, score):
     workers = _load_qualified_workers()
     if worker_id not in workers:
         workers[worker_id] = {
             "score": score,
-            "completion_code": completion_code,
+            "completion_codes": [],
             "completed_problems": [],
             "qualified_at": datetime.now(timezone.utc).isoformat(),
         }
         _save_qualified_workers(workers)
+
+
+def record_completion_code(worker_id, code):
+    """Append a completion code to this worker's list."""
+    workers = _load_qualified_workers()
+    rec = workers.get(worker_id)
+    if rec:
+        codes = rec.setdefault("completion_codes", [])
+        if code not in codes:
+            codes.append(code)
+            _save_qualified_workers(workers)
 
 
 def record_completed_problem(worker_id, problem_idx):
