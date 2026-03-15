@@ -243,9 +243,10 @@ def page_consent():
         )
     st.session_state.demographics.update({"experience": exp, "role": role})
 
+    # ── CHANGED: replaced checkbox with anonymization notice + linked consent form + radio ──
     st.markdown(
         "Your responses will only be used for research purposes and the responses will be **ANONYMIZED**.\n\n"
-        "Please read the attached [consent form](https://pitt.co1.qualtrics.com/ControlPanel/File.php?F=F_wa8CERF58sCvIfJ) and provide your consent below:",
+        "Please read the attached [consent form](https://example.com/consent-form) and provide your consent below:",
         unsafe_allow_html=False,
     )
 
@@ -256,6 +257,7 @@ def page_consent():
         index=None,
     )
     worker_ok = bool(st.session_state.worker_id)
+    # ── END CHANGED ──
 
     consented = consent_check == "I consent"
 
@@ -272,138 +274,163 @@ def page_consent():
             st.rerun()
 
 
-def page_survey(df):
+def page_survey(problems):
 
-    row  = df.iloc[st.session_state.problem_idx]
-    mode = st.session_state.task_mode
+    problem = problems[st.session_state.problem_idx]
+    explanations = problem["explanations"]
+    num_expl = len(explanations)
 
-    badge_class = "mode-rate" if mode == "rate" else "mode-pick"
-    badge_text  = "EVALUATE EXPLANATION" if mode == "rate" else "IDENTIFY CORRECT EXPLANATION"
-    st.markdown(f'<span class="mode-badge {badge_class}">{badge_text}</span>', unsafe_allow_html=True)
+    # ── Initialise per-problem paging state ──
+    if "expl_page" not in st.session_state:
+        st.session_state.expl_page = 0
+    if "collected_ratings" not in st.session_state:
+        st.session_state.collected_ratings = []
 
-    render_problem(row)
+    current_page = st.session_state.expl_page
+    expl_text = explanations[current_page]
 
-    if mode == "rate":
-        st.markdown(f'<div class="card" style="margin-top:0.3rem">{row["explanation"]}</div>', unsafe_allow_html=True)
+    # ── Badge + progress (top of page) ──
+    st.markdown(
+        '<span class="mode-badge mode-rate">EVALUATE STUDENT EXPLANATIONS</span>',
+        unsafe_allow_html=True,
+    )
+    st.markdown(
+        f"<p style='color:#a89cc8;font-size:0.85rem;margin:0.2rem 0 0.1rem'>"
+        f"Explanation <strong>{current_page + 1}</strong> of "
+        f"<strong>{num_expl}</strong></p>",
+        unsafe_allow_html=True,
+    )
+    st.progress((current_page + 1) / num_expl)
 
-        st.markdown(
-            '<div class="def-card" style="background:#1e1b2e;border-left:3px solid #a78bfa;'
-            'padding:0.6rem 0.9rem;border-radius:0.4rem;margin:0.8rem 0 0.3rem;font-size:0.9rem;color:#d1c4e9">'
-            '<strong style="color:#a78bfa">Correct</strong> — A correct explanation explains why the line is used while implementing this program given the problem statement and source code.<br>'
-            '</div>',
-            unsafe_allow_html=True,
-        )
-        q_correct = st.radio(
-            "**Q1.** Is this explanation correct or incorrect?",
-            ["Correct", "Incorrect"],
-            key="q_correct", index=None,
-        )
+    # ── Problem context ──
+    render_problem(problem)
 
-        st.markdown(
-            '<div class="def-card" style="background:#1e1b2e;border-left:3px solid #a78bfa;'
-            'padding:0.6rem 0.9rem;border-radius:0.4rem;margin:0.8rem 0 0.3rem;font-size:0.9rem;color:#d1c4e9">'
-            '<strong style="color:#a78bfa">Complete</strong> — A complete explanation covers all aspects about why the line is used while implementing this program given the problem statement and source code.<br>'
-            '</div>',
-            unsafe_allow_html=True,
-        )
-        q_complete = st.radio(
-            "**Q2.** Is this explanation complete or incomplete?",
-            ["Complete", "Incomplete"],
-            key="q_complete", index=None,
-        )
+    # ── Current explanation card ──
+    st.markdown(
+        f'<div style="margin:0.3rem 0 0.1rem">'
+        f'<strong style="color:#a78bfa;font-size:0.85rem">Explanation {current_page + 1} of {num_expl}'
+        f'</strong></div>',
+        unsafe_allow_html=True,
+    )
+    st.markdown(
+        f'<div class="card" style="margin:0.1rem 0 0.3rem;padding:0.4rem 0.8rem">{expl_text}</div>',
+        unsafe_allow_html=True,
+    )
 
-        q_why = st.text_area("**Q3.** Why did you choose those options?", key="q_why",
-                             placeholder="Explain your reasoning…", height=90)
+    # ── Rating questions (definitions inline with each question) ──
+    _DEF_STYLE = (
+        'style="background:#1e1b2e;border-left:3px solid #a78bfa;'
+        'padding:0.35rem 0.7rem;border-radius:0.3rem;margin:0.3rem 0 0.15rem;'
+        'font-size:0.82rem;color:#d1c4e9"'
+    )
 
-        all_required = bool(q_correct and q_complete and q_why and q_why.strip())
-        answers = {
-            "correctness_rating":  q_correct,
-            "completeness_rating": q_complete,
-            "reasoning":           q_why,
-        }
+    st.markdown(
+        f'<div class="def-card" {_DEF_STYLE}>'
+        '<strong style="color:#a78bfa">Correct</strong> — A correct explanation explains '
+        'why the line is used while implementing this program given the problem statement '
+        'and source code.</div>',
+        unsafe_allow_html=True,
+    )
+    q_correct = st.radio(
+        "**Q1.** Is this explanation correct or incorrect?",
+        ["Correct", "Incorrect"],
+        key=f"q_correct_{current_page}", index=None,
+    )
 
-    else:
-        options       = st.session_state.options_order
-        option_labels = [f"Option {chr(65 + i)}" for i in range(len(options))]
+    st.markdown(
+        f'<div class="def-card" {_DEF_STYLE}>'
+        '<strong style="color:#a78bfa">Complete</strong> — A complete explanation covers '
+        'all aspects about why the line is used while implementing this program given the '
+        'problem statement and source code.</div>',
+        unsafe_allow_html=True,
+    )
+    q_complete = st.radio(
+        "**Q2.** Is this explanation complete or incomplete?",
+        ["Complete", "Incomplete"],
+        key=f"q_complete_{current_page}", index=None,
+    )
 
-        for i, (_, text) in enumerate(options):
-            st.markdown(
-                f'<div class="expl-option"><strong style="color:#a78bfa">{option_labels[i]}.</strong> {text}</div>',
-                unsafe_allow_html=True,
-            )
+    q_why = st.text_area(
+        "**Q3.** Why did you choose those options?",
+        key=f"q_why_{current_page}",
+        placeholder="Explain your reasoning…", height=80,
+    )
 
-        st.markdown(
-            '<div class="def-card" style="background:#1e1b2e;border-left:3px solid #a78bfa;'
-            'padding:0.6rem 0.9rem;border-radius:0.4rem;margin:0.8rem 0 0.3rem;font-size:0.9rem;color:#d1c4e9">'
-            '<strong style="color:#a78bfa">Correct</strong> — A correct explanation explains why the line is used while implementing this program given the problem statement and source code.<br>'
-            '</div>',
-            unsafe_allow_html=True,
-        )
-        q_pick = st.radio("**Q1.** Select the correct explanation:", option_labels, key="q_pick", index=None)
-        selected_key = options[option_labels.index(q_pick)][0] if q_pick else None
+    page_filled = bool(q_correct and q_complete and q_why and q_why.strip())
+    is_last = current_page == num_expl - 1
 
-        st.markdown(
-            '<div class="def-card" style="background:#1e1b2e;border-left:3px solid #a78bfa;'
-            'padding:0.6rem 0.9rem;border-radius:0.4rem;margin:0.8rem 0 0.3rem;font-size:0.9rem;color:#d1c4e9">'
-            '<strong style="color:#a78bfa">Complete</strong> — A complete explanation covers all aspects about why the line is used while implementing this program given the problem statement and source code.<br>'
-            '</div>',
-            unsafe_allow_html=True,
-        )
-        q_complete_pick = st.radio(
-            "**Q2.** Is the explanation you selected complete or incomplete?",
-            ["Complete", "Incomplete"],
-            key="q_complete_pick", index=None,
-        )
-
-        q_why_pick = st.text_area("**Q3.** Why did you choose those options?", key="q_why_pick",
-                                  placeholder="Explain your reasoning…", height=90)
-
-        all_required = bool(q_pick and q_complete_pick and q_why_pick and q_why_pick.strip())
-        answers = {
-            "selected_option_label": q_pick,
-            "selected_option_key":   selected_key,
-            "is_correct":            selected_key == "correct",
-            "completeness_rating":   q_complete_pick,
-            "reasoning":             q_why_pick,
-            "options_order": [
-                {"position": option_labels[i], "key": k, "text_preview": t[:60] + "…"}
-                for i, (k, t) in enumerate(options)
-            ],
-        }
-
+    # ── Navigation ──
     col_back, _, col_next = st.columns([1, 3, 1])
+
     with col_back:
-        if st.button("← Back"):
-            st.session_state.page = PAGE_CONSENT
-            st.rerun()
+        if current_page == 0:
+            if st.button("← Back to Consent"):
+                st.session_state.pop("expl_page", None)
+                st.session_state.pop("collected_ratings", None)
+                st.session_state.page = PAGE_CONSENT
+                st.rerun()
+        else:
+            if st.button("← Previous"):
+                st.session_state.expl_page -= 1
+                st.rerun()
+
     with col_next:
-        if st.button("Submit ✓", disabled=not all_required):
-            payload = {
-                "mturk_worker_id":       st.session_state.worker_id,
-                "completion_code":       st.session_state.completion_code,
-                "timestamp_utc":         datetime.now(timezone.utc).isoformat(),
-                "task_mode":             mode,
-                "problem_index":         int(st.session_state.problem_idx),
-                "problem_statement":     row["problem_statement"],
-                "solution_source_code":  row["solution_source_code"],
-                "selected_line":         row["selected_line"],
-                "correct_explanation":   row["explanation"],
-                "demographics":          st.session_state.demographics,
-                "java_experience_level": st.session_state.java_level,
-                "responses":             answers,
-            }
-            st.session_state.response_payload = payload
-            save_response(payload)
-            record_completed_problem(st.session_state.worker_id, int(st.session_state.problem_idx))
-            record_completion_code(st.session_state.worker_id, st.session_state.completion_code)
-            st.session_state.page = PAGE_COMPLETE
-            st.rerun()
+        if is_last:
+            if st.button("Submit ✓", disabled=not page_filled):
+                _save_current_rating(current_page, expl_text, q_correct, q_complete, q_why)
 
-    if not all_required:
-        st.caption("Answer all questions before submitting.")
+                all_ratings = st.session_state.collected_ratings
+                payload = {
+                    "mturk_worker_id":       st.session_state.worker_id,
+                    "completion_code":       st.session_state.completion_code,
+                    "timestamp_utc":         datetime.now(timezone.utc).isoformat(),
+                    "task_mode":             "rate",
+                    "problem_index":         int(st.session_state.problem_idx),
+                    "problem_id":            problem.get("problem_id"),
+                    "problem_statement":     problem["problem_statement"],
+                    "solution_source_code":  problem["solution_source_code"],
+                    "selected_line":         problem["selected_line"],
+                    "num_explanations":      num_expl,
+                    "demographics":          st.session_state.demographics,
+                    "java_experience_level": st.session_state.java_level,
+                    "ratings":               all_ratings,
+                }
+                st.session_state.response_payload = payload
+                save_response(payload)
+                record_completed_problem(st.session_state.worker_id, int(st.session_state.problem_idx))
+                record_completion_code(st.session_state.worker_id, st.session_state.completion_code)
+                st.session_state.pop("expl_page", None)
+                st.session_state.pop("collected_ratings", None)
+                st.session_state.page = PAGE_COMPLETE
+                st.rerun()
+        else:
+            if st.button("Next →", disabled=not page_filled):
+                _save_current_rating(current_page, expl_text, q_correct, q_complete, q_why)
+                st.session_state.expl_page += 1
+                st.rerun()
+
+    if not page_filled:
+        st.caption("Answer all three questions to continue.")
 
 
-def page_complete(df):
+def _save_current_rating(idx, expl_text, q_correct, q_complete, q_why):
+    """Store or update the rating for explanation at index `idx`."""
+    ratings = st.session_state.collected_ratings
+    entry = {
+        "explanation_index":    idx,
+        "explanation_text":     expl_text,
+        "correctness_rating":   q_correct,
+        "completeness_rating":  q_complete,
+        "reasoning":            q_why,
+    }
+    for i, r in enumerate(ratings):
+        if r["explanation_index"] == idx:
+            ratings[i] = entry
+            return
+    ratings.append(entry)
+
+
+def page_complete(problems):
     code   = st.session_state.completion_code
     worker = st.session_state.worker_id or "Not provided"
 
@@ -434,15 +461,14 @@ def page_complete(df):
         with st.expander("View recorded response (JSON)"):
             st.json(st.session_state.response_payload)
 
-    # --- Start another task (same completion code, new problem) ---
-    new_idx = pick_new_problem(df, st.session_state.worker_id)
+    # --- Start another task (new completion code, new problem) ---
+    new_idx = pick_new_problem(problems, st.session_state.worker_id)
     if new_idx is not None:
         st.markdown("---")
         st.markdown(
             '<div style="background:#1e1b2e;border-left:3px solid #a78bfa;'
             'padding:0.6rem 0.9rem;border-radius:0.4rem;margin:0.5rem 0;font-size:0.9rem;color:#d1c4e9">'
-            '🔄 More tasks are available! You can start a new task with the same '
-            'completion code. Your Worker ID and eligibility carry over automatically.'
+            '🔄 More tasks are available! You will receive a new completion code for each task.'
             '</div>',
             unsafe_allow_html=True,
         )
@@ -467,7 +493,6 @@ def page_complete(df):
             with col_yes:
                 if st.button("Yes, I submitted ✓"):
                     st.session_state.confirm_new_task = False
-                    # Clear task-specific state but keep worker identity
                     keys_to_keep = {
                         "page", "worker_id", "java_level",
                         "demographics", "questions_standard", "questions_escalated",
@@ -475,22 +500,9 @@ def page_complete(df):
                     for k in list(st.session_state.keys()):
                         if k not in keys_to_keep:
                             del st.session_state[k]
-                    # Generate a fresh completion code for the new task
                     from utils import generate_completion_code
                     st.session_state.completion_code = generate_completion_code()
-                    # Set up the new task
-                    import random
-                    row = df.iloc[new_idx]
                     st.session_state.problem_idx = new_idx
-                    st.session_state.task_mode = random.choice(["rate", "pick"])
-                    st.session_state.options_order = None  # force rebuild
-                    options = [
-                        ("correct",      row["explanation"]),
-                        ("distractor_1", row["distractor_1"]),
-                        ("distractor_2", row["distractor_2"]),
-                    ]
-                    random.shuffle(options)
-                    st.session_state.options_order = options
                     st.session_state.page = PAGE_SURVEY
                     st.rerun()
             with col_no:

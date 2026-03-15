@@ -1,11 +1,6 @@
-.streamlit/secrets.toml
-screener_attempts.json
-survey_data.csv
-tests
 __pycache__
-screener_questions.json
-responses.json
-data.csv
-*.bk
-completed_workers.json
-qualified_workers.json
+.streamlit/secrets.toml
+tests
+analysis_output
+data
+problems

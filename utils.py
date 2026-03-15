@@ -4,7 +4,6 @@ import re
 import string
 from datetime import datetime, timezone
 
-import pandas as pd
 import streamlit as st
 
 from config import (
@@ -16,10 +15,17 @@ from config import (
 
 @st.cache_data
 def load_survey_data(path=DATA_FILE):
+    """Load the grouped survey data JSON.
+
+    Returns a list of dicts, each with keys:
+        problem_id, problem_statement, solution_source_code,
+        selected_line, explanations (list of str).
+    """
     try:
-        return pd.read_csv(path).reset_index(drop=True)
+        with open(path, "r", encoding="utf-8") as f:
+            return json.load(f)
     except FileNotFoundError:
-        st.error(f"Could not find `{path}`. Place it in the data/ folder and restart.")
+        st.error(f"Could not find `{path}`. Run convert_survey_data.py first.")
         st.stop()
 
 
@@ -141,12 +147,12 @@ def get_qualified_worker(worker_id):
     return _load_qualified_workers().get(worker_id)
 
 
-def pick_new_problem(df, worker_id):
+def pick_new_problem(problems, worker_id):
     """Pick a random problem index the worker hasn't done yet.
     Returns the index, or None if all problems are exhausted."""
     qualified = get_qualified_worker(worker_id)
     done = qualified.get("completed_problems", []) if qualified else []
-    available = [i for i in range(len(df)) if i not in done]
+    available = [i for i in range(len(problems)) if i not in done]
     if not available:
         return None
     return random.choice(available)
@@ -270,7 +276,11 @@ def reshuffle_screener_options(questions):
     return shuffled
 
 
-def init_session_state(df, questions_standard, questions_escalated):
+def init_session_state(problems, questions_standard, questions_escalated):
+    """Initialise session state.
+
+    `problems` is the list of problem dicts loaded from survey_data.json.
+    """
     defaults = {
         "page":            PAGE_SCREENER,
         "worker_id":       "",
@@ -279,8 +289,7 @@ def init_session_state(df, questions_standard, questions_escalated):
         "screener_checked": False,
         "screener_score":  0,
         "demographics":    {},
-        "task_mode":       random.choice(["rate", "pick"]),
-        "problem_idx":     random.randint(0, len(df) - 1),
+        "problem_idx":     random.randint(0, len(problems) - 1),
         "questions_standard":  questions_standard,
         "questions_escalated": questions_escalated,
     }
@@ -288,27 +297,65 @@ def init_session_state(df, questions_standard, questions_escalated):
         if key not in st.session_state:
             st.session_state[key] = value
 
-    if "options_order" not in st.session_state:
-        row = df.iloc[st.session_state.problem_idx]
-        options = [
-            ("correct",      row["explanation"]),
-            ("distractor_1", row["distractor_1"]),
-            ("distractor_2", row["distractor_2"]),
-        ]
-        random.shuffle(options)
-        st.session_state.options_order = options
-
     if "screener_options" not in st.session_state:
         st.session_state.screener_options = reshuffle_screener_options(questions_standard)
 
 
-def render_problem(row):
-    st.markdown("### Problem statement")
-    st.markdown(f'<div class="card">{row["problem_statement"]}</div>', unsafe_allow_html=True)
-    st.markdown("### Solution source code")
-    st.code(row["solution_source_code"], language="python")
-    st.markdown("### Selected line")
+def render_problem(problem):
+    """Render the problem statement and source code with the selected line
+    highlighted inside the code block.
+
+    `problem` is a dict with keys: problem_statement, solution_source_code,
+    selected_line, and optionally line_number.
+    """
+    import html as html_mod
+
     st.markdown(
-        f'<div class="highlight-line">&#9654;&nbsp;&nbsp;{row["selected_line"]}</div>',
+        f'<div class="card" style="margin:0 0 0.4rem;padding:0.5rem 0.8rem">'
+        f'{problem["problem_statement"]}</div>',
+        unsafe_allow_html=True,
+    )
+
+    selected_line = problem["selected_line"]
+    source_code = problem["solution_source_code"]
+    code_lines = source_code.splitlines()
+    num_lines = len(code_lines)
+
+    # Find which line(s) match the selected line
+    selected_indices = set()
+    line_num = problem.get("line_number")
+    if line_num and 1 <= line_num <= num_lines:
+        selected_indices.add(line_num - 1)
+    else:
+        stripped_sel = selected_line.strip()
+        for i, line in enumerate(code_lines):
+            if line.strip() == stripped_sel:
+                selected_indices.add(i)
+
+    # Build HTML with highlighted line — compact spacing
+    line_height_rem = 1.25
+    padding_rem = 1.0
+    block_height = max(3, num_lines * line_height_rem + padding_rem)
+
+    html_lines = []
+    for i, line in enumerate(code_lines):
+        escaped = html_mod.escape(line) if line else "&nbsp;"
+        if i in selected_indices:
+            html_lines.append(
+                f'<div style="background:#3b2d6b;margin:0 -{padding_rem / 2}rem;'
+                f'padding:0 {padding_rem / 2}rem;border-left:3px solid #a78bfa">'
+                f'{escaped}</div>'
+            )
+        else:
+            html_lines.append(f'<div>{escaped}</div>')
+
+    code_html = "\n".join(html_lines)
+
+    st.markdown(
+        f'<div style="background:#0d1117;border:1px solid #30363d;border-radius:0.4rem;'
+        f'padding:0.5rem 0.6rem;font-family:monospace;font-size:0.82rem;'
+        f'line-height:{line_height_rem}rem;white-space:pre;overflow-x:auto;'
+        f'color:#e6edf3;min-height:{block_height}rem;margin:0 0 0.3rem">'
+        f'{code_html}</div>',
         unsafe_allow_html=True,
     )

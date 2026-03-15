@@ -5,7 +5,7 @@ import streamlit as st
 DATA_DIR               = os.path.join(".", "data")
 os.makedirs(DATA_DIR, exist_ok=True)
 
-DATA_FILE              = os.path.join(DATA_DIR, "survey_data.csv")
+DATA_FILE              = os.path.join(DATA_DIR, "survey_data.json")
 RESPONSES_FILE         = os.path.join(DATA_DIR, "responses.json")
 ATTEMPTS_FILE          = os.path.join(DATA_DIR, "screener_attempts.json")
 QUESTIONS_FILE         = os.path.join(DATA_DIR, "screener_questions.json")
