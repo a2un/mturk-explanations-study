@@ -4,4 +4,3 @@ headless = true
 enableXsrfProtection=false
 enableCORS = false
 enableWebsocketCompression = false
-allowedOrigins = ["*"]
