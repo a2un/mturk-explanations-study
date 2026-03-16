@@ -1,5 +1,4 @@
 [server]
-baseUrlPath = "./"
 headless = true
 enableXsrfProtection=false
 enableCORS = false
