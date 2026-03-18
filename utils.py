@@ -303,7 +303,7 @@ def init_session_state(problems, questions_standard, questions_escalated):
 
 def render_problem(problem):
     """Render the problem statement and source code with the selected line
-    highlighted inside the code block.
+    highlighted inside a compact context window, with expandable full code.
 
     `problem` is a dict with keys: problem_statement, solution_source_code,
     selected_line, and optionally line_number.
@@ -332,30 +332,69 @@ def render_problem(problem):
             if line.strip() == stripped_sel:
                 selected_indices.add(i)
 
-    # Build HTML with highlighted line — compact spacing
     line_height_rem = 1.25
     padding_rem = 1.0
-    block_height = max(3, num_lines * line_height_rem + padding_rem)
 
-    html_lines = []
-    for i, line in enumerate(code_lines):
-        escaped = html_mod.escape(line) if line else "&nbsp;"
-        if i in selected_indices:
-            html_lines.append(
-                f'<div style="background:#3b2d6b;margin:0 -{padding_rem / 2}rem;'
-                f'padding:0 {padding_rem / 2}rem;border-left:3px solid #a78bfa">'
-                f'{escaped}</div>'
-            )
-        else:
-            html_lines.append(f'<div>{escaped}</div>')
+    def _build_code_html(lines_range=None):
+        """Build HTML for code lines. If lines_range is None, render all."""
+        parts = []
+        for i, line in enumerate(code_lines):
+            if lines_range is not None and i not in lines_range:
+                continue
+            escaped = html_mod.escape(line) if line else "&nbsp;"
+            if i in selected_indices:
+                parts.append(
+                    f'<div style="background:#3b2d6b;margin:0 -{padding_rem / 2}rem;'
+                    f'padding:0 {padding_rem / 2}rem;border-left:3px solid #a78bfa">'
+                    f'{escaped}</div>'
+                )
+            else:
+                parts.append(f'<div>{escaped}</div>')
+        return "\n".join(parts)
 
-    code_html = "\n".join(html_lines)
+    def _code_block(html_content, height_lines):
+        h = max(2.5, height_lines * line_height_rem + padding_rem)
+        return (
+            f'<div style="background:#0d1117;border:1px solid #30363d;border-radius:0.4rem;'
+            f'padding:0.5rem 0.6rem;font-family:monospace;font-size:0.82rem;'
+            f'line-height:{line_height_rem}rem;white-space:pre;overflow-x:auto;'
+            f'color:#e6edf3;min-height:{h}rem;margin:0 0 0.3rem">'
+            f'{html_content}</div>'
+        )
 
-    st.markdown(
-        f'<div style="background:#0d1117;border:1px solid #30363d;border-radius:0.4rem;'
-        f'padding:0.5rem 0.6rem;font-family:monospace;font-size:0.82rem;'
-        f'line-height:{line_height_rem}rem;white-space:pre;overflow-x:auto;'
-        f'color:#e6edf3;min-height:{block_height}rem;margin:0 0 0.3rem">'
-        f'{code_html}</div>',
-        unsafe_allow_html=True,
-    )
+    # Context window: show ~2 lines above and below the selected line
+    CONTEXT = 2
+    if selected_indices:
+        center = min(selected_indices)  # use first match
+    else:
+        center = 0
+    win_start = max(0, center - CONTEXT)
+    win_end = min(num_lines - 1, center + CONTEXT)
+    window_range = set(range(win_start, win_end + 1))
+    window_size = win_end - win_start + 1
+
+    # Show ellipsis indicators
+    has_above = win_start > 0
+    has_below = win_end < num_lines - 1
+    ellipsis_style = 'style="color:#6e7681;font-style:italic"'
+    prefix = f'<div {ellipsis_style}>⋯ {win_start} line{"s" if win_start != 1 else ""} above</div>\n' if has_above else ""
+    suffix = f'\n<div {ellipsis_style}>⋯ {num_lines - 1 - win_end} line{"s" if (num_lines - 1 - win_end) != 1 else ""} below</div>' if has_below else ""
+
+    context_html = prefix + _build_code_html(window_range) + suffix
+
+    # Compact context view (always visible)
+    st.markdown(_code_block(context_html, window_size + (1 if has_above else 0) + (1 if has_below else 0)), unsafe_allow_html=True)
+
+    # Prominent reminder + full code expander
+    if num_lines > window_size:
+        st.markdown(
+            '<div style="background:#1a1533;border:1px dashed #a78bfa;border-radius:0.4rem;'
+            'padding:0.4rem 0.7rem;margin:0.2rem 0 0.3rem;font-size:1.5em;color:#d1c4e9;'
+            'text-align:center">'
+            '👀 <strong>Review the Problem Statement and full code before rating</strong> — '
+            'context around the highlighted line may affect correctness and completeness.'
+            '</div>',
+            unsafe_allow_html=True,
+        )
+        with st.expander("📄 Click here to view full source code", expanded=False):
+            st.markdown(_code_block(_build_code_html(), num_lines), unsafe_allow_html=True)

@@ -308,7 +308,7 @@ def page_survey(problems):
     # ── Current explanation card ──
     st.markdown(
         f'<div style="margin:0.3rem 0 0.1rem">'
-        f'<strong style="color:#a78bfa;font-size:0.85rem">Explanation {current_page + 1} of {num_expl}'
+        f'<strong style="color:#a78bfa;font-size:1.5rem">Explanation {current_page + 1} of {num_expl}'
         f'</strong></div>',
         unsafe_allow_html=True,
     )
